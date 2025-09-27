@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Настройка персонажа Genshin Impact</title>
+<link rel="stylesheet" href="general.css">
+<link rel="stylesheet" href="style-home.css">
+<link rel="stylesheet" href="list_char.css">
+<link rel="stylesheet" href="filter.css">
+
+<script  src="./charactersData.js" defer></script>
+<script  src="./characterDiv.js" defer></script>
+
+<style>
+  body { font-family: Arial, sans-serif; 
+    padding: 2vh; height: 100vh; 
+    margin: 0; display: flex; 
+    flex-direction: column;
+
+  box-sizing: border-box;
+}
+  
+</style>
+    <script src="./script_cardimg.js" defer></script>
+    
+    <script src="./Filter.js" defer></script>
+    <script src="./filter.js" defer></script>
+</head>
+<body>
+<section class="section">
+    <input type="button" onclick="history.back();" value="назад">
+    <H1>Материалы развития: Персонажи</H1>
+</section>
+<section class="cards-container">
+    <article class="cardAvatar Electro Pole five all" data-name="Flins">
+      <a href="flins.html" class="link-to-char">
+        <div class="avatar">
+          <img src="./flins.png">
+        </div>
+        <span class="name">
+          <p>Flins</p>
+        </span>
+      </a>
+    </article>
+
+    
+
+    <article class="cardAvatar Anemo Pole four all">
+      <a href="flins.html">
+        <div class="avatar">
+          <img src="./flins.png">
+        </div>
+        <span class="name">
+          <p>Flins</p>
+        </span>
+      </a>
+    </article>
+
+    <article class="cardAvatar Electro Pole five all">
+      <a href="flins.html">
+        <div class="avatar">
+          <img src="./flins.png">
+        </div>
+        <span class="name">
+          <p>Flins</p>
+        </span>
+      </a>
+    </article>
+  <!-- Сообщение об отсутствии результатов -->
+  <div id="no-results-message">По вашему запросу ничего не найдено.</div>
+</section>
+
+<div class="filter-container">
+  <div class="filter" data-filter="element">
+    <button class="arrow left" aria-label="Previous Element">&lt;</button>
+    <span class="filter-value">All</span>
+    <button class="arrow right" aria-label="Next Element">&gt;</button>
+  </div>
+
+  <div class="filter" data-filter="type">
+    <button class="arrow left" aria-label="Previous Type">&lt;</button>
+    <span class="filter-value">All</span>
+    <button class="arrow right" aria-label="Next Type">&gt;</button>
+  </div>
+
+  <div class="filter" data-filter="rarity">
+    <button class="arrow left" aria-label="Previous Rarity">&lt;</button>
+    <span class="filter-value">All</span>
+    <button class="arrow right" aria-label="Next Rarity">&gt;</button>
+  </div>
+
+  <div>
+    <button id="apply-filter">Apply Filter</button>
+    <button id="reset-filter">Reset Filters</button>
+  </div>
+</div>
+
+</body>
+</html>

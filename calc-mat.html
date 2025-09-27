@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Страница расчета материалов персонажа</title>
+  <link rel="stylesheet" href="general.css">
+  <link rel="stylesheet" href="calcular.css">
+  <script  src="./charactersData.js" defer></script>
+  <script  src="./charMatData.js" defer></script>
+  <script src="./calcular2.js" defer></script>
+</head>
+<body>
+<section class="characters">
+  <div id="char-icon"></div>
+  <h1 id="char-name">???</h1>
+</section>
+<section class="level">
+  <article>
+    <h2>level</h2>
+    <h2 id="lvl">???</h2>
+  </article>
+  <div class="materials-container"></div>
+</section>
+<section class="mat-attack">
+  <article>
+    <h2>atack</h2>
+    <h2 id="lvl-attack">&&&</h2>
+  </article>
+  <div class="materials-container"></div>
+  
+  
+</section>
+<section class="mat-skill">
+  <article><h2 id="lvl-skill">&&&</h2></article>
+  <div class="materials-container"></div>
+</section>
+<section class="mat-explosion">
+  <article>111</article>
+  <div class="materials-container"></div>
+</section>
+<section class="all">
+  <article>222</article>
+  <div class="materials-container"></div>
+</section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const storedData = localStorage.getItem("characterData");
+  if (!storedData) {
+    console.error("Нет данных персонажа в localStorage");
+    return;
+  }
+
+  const { charName, rangeVal, level, attackLevel, skillLevel, explosionLevel } = JSON.parse(storedData);
+  const charData = window.charsData?.[charName];
+  if (!charData) {
+    console.error("Персонаж не найден в charsData:", charName);
+    return;
+  }
+
+  function formatAmount(num) {
+    if (num === null || num === undefined || isNaN(num)) return num;
+    const abs = Math.abs(num);
+    if (abs < 1000) return String(num);
+    const units = [
+      { value: 1e12, symbol: "T" },
+      { value: 1e9, symbol: "B" },
+      { value: 1e6, symbol: "M" },
+      { value: 1e3, symbol: "k" },
+    ];
+    for (const unit of units) {
+      if (abs >= unit.value) {
+        return (num / unit.value).toFixed(1).replace(/\.0$/, "") + unit.symbol;
+      }
+    }
+    return String(num);
+  }
+
+  const charIconDiv = document.getElementById("char-icon");
+  const charNameH1 = document.getElementById("char-name");
+  const charlvl = document.getElementById("lvl");
+  const charAttack = document.getElementById("lvl-attack");
+  const charSkill = document.getElementById("lvl-skill");
+  const iconSrc = charData.boldIcon || "icons/default-character.png";
+
+  charIconDiv.innerHTML = `<img src="${iconSrc}" alt="${charName}">`;
+  charNameH1.textContent = charName;
+  charlvl.textContent = level;
+  charAttack.textContent = attackLevel;
+  charSkill.textContent = skillLevel;
+
+  const ascMaterials = charData.ascensionMaterials || {};
+  const amountsPerLevel = materialCategories.amountsPerLevel?.[rangeVal] || {};
+  const attackMaterials = materialCategories.attack?.[attackLevel] || {};
+  const skillMaterials = materialCategories.skill?.[skillLevel] || {};
+  const burstMaterials = materialCategories.burst?.[explosionLevel] || {};
+
+  /**
+   * Глубокий поиск информации о материале внутри materialsInfo по compoundKey:
+   * compoundKey - строка с точечным разделением ключей (например, "gems.silver.Electro")
+   */
+  function getMaterialInfo(compoundKey) {
+    const parts = compoundKey.split(".");
+    let current = materialsInfo;
+
+    // Для накопления name и icon при спуске по иерархии — возьмём последние найденные
+    let lastName = null;
+    let lastIcon = null;
+
+    for (const part of parts) {
+      if (!current || typeof current !== "object" || !current.hasOwnProperty(part)) {
+        return null; // элемент не найден
+      }
+      current = current[part];
+      if (current.name) lastName = current.name;
+      if (current.icon) lastIcon = current.icon;
+    }
+
+    if (!current) return null;
+
+    return {
+      ...current,
+      name: current.name || lastName,
+      icon: current.icon || lastIcon,
+    };
+  }
+
+  function createMaterialDiv(name, icon, amount, withInput = true) {
+    const article = document.createElement("article");
+    article.classList.add("materialDiv");
+
+    const img = document.createElement("img");
+    img.src = icon;
+    img.alt = name;
+
+    const label = document.createElement("span");
+    label.textContent = `${name}`;
+
+    article.appendChild(img);
+    article.appendChild(label);
+
+    if (withInput) {
+      const inputHave = document.createElement("input");
+      inputHave.type = "number";
+      inputHave.min = 0;
+      inputHave.value = 0;
+      inputHave.style.width = "50px";
+      inputHave.style.marginRight = "4px";
+
+      const spanRemaining = document.createElement("span");
+      spanRemaining.textContent = `Осталось: ${formatAmount(amount)}`;
+
+      inputHave.addEventListener("input", () => {
+        let have = parseInt(inputHave.value, 10);
+        if (isNaN(have) || have < 0) have = 0;
+        const remaining = Math.max(0, amount - have);
+        spanRemaining.textContent = `Осталось: ${formatAmount(remaining)}`;
+      });
+
+      article.appendChild(inputHave);
+      article.appendChild(spanRemaining);
+    } else {
+      const spanAmount = document.createElement("span");
+      spanAmount.textContent = `${formatAmount(amount)}`;
+      article.appendChild(spanAmount);
+    }
+
+    return article;
+  }
+
+  /**
+   * Разворачиваем и суммируем материалы в плоский объект {compoundKey: amount}
+   * с учётом, что ascMaterials могут содержать под-ключи подкатегорий,
+   * которые нужно корректно распределять.
+   *
+   * Это рекурсивная функция, спускающаяся по объекту materials, в сочетании с ascMatMap,
+   * позволяющей для compoundKey проверить, есть ли дочерние ключи для делёжки.
+   */
+  function flattenMaterials(materials, ascMatMap = ascMaterials) {
+  const totals = {};
+
+  function helper(obj, parentKey = "") {
+    for (const [key, value] of Object.entries(obj)) {
+      const compoundKey = parentKey ? `${parentKey}.${key}` : key;
+
+      if (typeof value === "number") {
+        // Текущая логика — делить по ascMatMap
+        const ascSubs = ascMatMap[compoundKey];
+        if (ascSubs && Array.isArray(ascSubs) && ascSubs.length > 0) {
+          const baseAmount = Math.floor(value / ascSubs.length);
+          const remainder = value % ascSubs.length;
+
+          ascSubs.forEach((subKey, index) => {
+            const subCompoundKey = `${compoundKey}.${subKey}`;
+            let amt = baseAmount;
+            if (index === ascSubs.length - 1) amt += remainder;
+            totals[subCompoundKey] = (totals[subCompoundKey] || 0) + amt;
+          });
+        } else {
+          // Листовой материал
+          totals[compoundKey] = (totals[compoundKey] || 0) + value;
+        }
+      } else if (typeof value === "object" && value !== null) {
+        // Обработка вложенного объекта
+        helper(value, compoundKey);
+      }
+    }
+  }
+
+  helper(materials);
+  return totals;
+}
+
+  /**
+   * Рендерим материалы из totals в контейнер
+   * withInput - нужно ли добавлять поле ввода количества уже имеющегося материала
+   */
+  function renderMaterials(container, totals, withInput = false) {
+    container.innerHTML = "";
+
+    // Отфильтруем только не нулевые количества
+    const entries = Object.entries(totals).filter(([, amt]) => amt > 0);
+
+    if (entries.length === 0) {
+      container.textContent = "Материалы не найдены.";
+      return;
+    }
+
+    for (const [compoundKey, amount] of entries) {
+      const matInfo = getMaterialInfo(compoundKey);
+      if (!matInfo) {
+        console.warn(`Материал для ключа '${compoundKey}' не найден в materialsInfo`);
+        continue;
+      }
+      const article = createMaterialDiv(matInfo.name, matInfo.icon, amount, withInput);
+      container.appendChild(article);
+    }
+  }
+
+  // Обновление секций с материалами
+  function updateCategoryMaterials(sectionSelector, matsObj, lvl) {
+    const section = document.querySelector(sectionSelector);
+    if (!section) {
+      console.warn(`Секция ${sectionSelector} не найдена в DOM`);
+      return;
+    }
+    const container = section.querySelector("div.materials-container");
+    if (!container) {
+      console.warn(`Контейнер materials-container в ${sectionSelector} не найден`);
+      return;
+    }
+
+    if (!matsObj || Object.keys(matsObj).length === 0) {
+      container.textContent = `Для уровня ${lvl} материалы не найдены.`;
+      return;
+    }
+
+    const totals = flattenMaterials(matsObj, ascMaterials);
+    renderMaterials(container, totals, false);
+  }
+
+  // Рендер уровня
+  const levelSection = document.querySelector("section.level");
+  if (levelSection) {
+    const container = levelSection.querySelector("div.materials-container");
+    if (container) {
+      const ascTotals = flattenMaterials(amountsPerLevel, ascMaterials);
+      renderMaterials(container, ascTotals, false);
+    } else {
+      console.warn("Контейнер materials-container в level не найден");
+    }
+  } else {
+    console.warn("Секция level не найдена в DOM");
+  }
+
+  updateCategoryMaterials("section.mat-attack", attackMaterials, attackLevel);
+  updateCategoryMaterials("section.mat-skill", skillMaterials, skillLevel);
+  updateCategoryMaterials("section.mat-explosion", burstMaterials, explosionLevel);
+
+  const allSection = document.querySelector("section.all");
+  if (allSection) {
+    const container = allSection.querySelector("div.materials-container");
+    if (container) {
+      container.innerHTML = "";
+
+      const totalMaterials = {};
+
+      const mergeTotals = (target, source) => {
+        for (const [key, amt] of Object.entries(source)) {
+          target[key] = (target[key] || 0) + amt;
+        }
+      };
+
+      mergeTotals(totalMaterials, flattenMaterials(amountsPerLevel, ascMaterials));
+      mergeTotals(totalMaterials, flattenMaterials(attackMaterials, ascMaterials));
+      mergeTotals(totalMaterials, flattenMaterials(skillMaterials, ascMaterials));
+      mergeTotals(totalMaterials, flattenMaterials(burstMaterials, ascMaterials));
+
+      renderMaterials(container, totalMaterials, true);
+    } else {
+      console.warn("Контейнер materials-container в all не найден");
+    }
+  } else {
+    console.warn("Секция all не найдена в DOM");
+  }
+});
+</script>
+
+</body>
+</html>

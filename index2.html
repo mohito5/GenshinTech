@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<title>Настройка персонажа Genshin Impact</title>
+<link rel="stylesheet" href="style-home.css">
+<style>
+  body { font-family: Arial, sans-serif; padding: 10px; }
+  .section { margin-bottom: 20px; }
+  label { display: block; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h2>Настройки персонажа</h2>
+
+<div class="section">
+  <label for="character">Персонаж:</label>
+  <select id="character">
+    <option value="Альбедо">Альбедо</option>
+    <option value="Дилюк">Дилюк</option>
+    <option value="Клее">Клее</option>
+  </select>
+</div>
+
+<div class="section">
+  <label for="level">Уровень:</label>
+  <input type="range" id="level" min="1" max="90" value="1" />
+  <span id="level_value">1</span>
+</div>
+
+<div class="section">
+  <label>Навыки (уровень):</label>
+  <label>Навык 1: <input type="number" id="skill1" min="1" max="10" value="1" /></label>
+  <label>Навык 2: <input type="number" id="skill2" min="1" max="10" value="1" /></label>
+  <label>Навык 3: <input type="number" id="skill3" min="1" max="10" value="1" /></label>
+</div>
+
+<div class="section">
+  <h3>Требуемые материалы для уровня:</h3>
+  <div id="materials_needed"></div>
+</div>
+
+<div class="section">
+  <h3>Ваши материалы (введите количество):</h3>
+  <div id="materials_have"></div>
+</div>
+
+<button id="saveBtn">Сохранить</button>
+<button id="calculateBtn">Обновить требования</button>
+<button id="showStatusBtn">Показать статус</button>
+
+<script>
+  const materialsList = ['Мечи', 'Щиты', 'Кристаллы'];
+  
+  // Создаем поля для ввода ваших материалов
+  function createMaterialsInputs() {
+    const container = document.getElementById('materials_have');
+    materialsList.forEach(mat => {
+      const label = document.createElement('label');
+      label.textContent = `${mat}: `;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = 0;
+      input.value = 0;
+      input.id = `have_${mat}`;
+      label.appendChild(input);
+      container.appendChild(label);
+      container.appendChild(document.createElement('br'));
+    });
+  }
+
+  createMaterialsInputs();
+
+  // Обновление отображения уровня
+  document.getElementById('level').addEventListener('input', () => {
+    document.getElementById('level_value').textContent = document.getElementById('level').value;
+  });
+
+  // Основная функция расчета требований
+  document.getElementById('calculateBtn').onclick = () => {
+    const level = parseInt(document.getElementById('level').value);
+    const skillLevels = [
+      parseInt(document.getElementById('skill1').value),
+      parseInt(document.getElementById('skill2').value),
+      parseInt(document.getElementById('skill3').value)
+    ];
+
+    // Получаем требования в зависимости от уровня
+    const reqs = getMaterialsForLevel(level);
+    // Увеличиваем требования в зависимости от навыков (например, +10% на каждый уровень навыка)
+    const skillMultiplier = 1 + 0.1 * Math.max(...skillLevels);
+    const totalReqs = {};
+    for (let mat of materialsList) {
+      totalReqs[mat] = Math.ceil(reqs[mat] * skillMultiplier);
+    }
+
+    // отображаем
+    const container = document.getElementById('materials_needed');
+    container.innerHTML = '';
+    for (let mat of materialsList) {
+      const div = document.createElement('div');
+      div.innerHTML = `${mat}: ${totalReqs[mat]} шт.`;
+      container.appendChild(div);
+    }
+
+    // сохраняем текущие требования в глобальную переменную
+    window.currentRequirements = totalReqs;
+  };
+
+  // Функция получения требований по уровню
+  function getMaterialsForLevel(level) {
+    // Для примера — линейное увеличение по уровням
+    const base = {
+      'Мечи': 1,
+      'Щиты': 1,
+      'Кристаллы': 2
+    };
+    const maxLevel = 90;
+    const factor = level / maxLevel; // 0..1
+    const result = {};
+    for (let mat of materialsList) {
+      result[mat] = Math.ceil(base[mat] * (1 + 4 * factor)); // от 1 до 5 раз базовое число
+    }
+    return result;
+  }
+
+  // Сохраняем данные
+  document.getElementById('saveBtn').onclick = () => {
+    const userMaterials = {};
+    for (let mat of materialsList) {
+      userMaterials[mat] = parseInt(document.getElementById(`have_${mat}`).value) || 0;
+    }
+    
+    const data = {
+      character: document.getElementById('character').value,
+      level: document.getElementById('level').value,
+      skills: {
+        skill1: parseInt(document.getElementById('skill1').value),
+        skill2: parseInt(document.getElementById('skill2').value),
+        skill3: parseInt(document.getElementById('skill3').value)
+      },
+      requirements: window.currentRequirements || {},
+      haveMaterials: userMaterials
+    };
+    // Отправляем в бота
+    window.Telegram.WebApp.sendData(JSON.stringify({ type: 'user_data', data }));
+  };
+
+  // Страница и логика для показа статуса
+  document.getElementById('showStatusBtn').onclick = () => {
+    // Получим сохранённые данные из user_data
+    // В бота — обработка
+  };
+
+</script>
+</body>
+</html>

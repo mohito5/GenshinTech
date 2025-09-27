@@ -1,0 +1,44 @@
+section{ padding: 2vh; display: flex; flex-direction: column;
+background: #e0e5ec; border-radius: 4vh;
+box-shadow: #fff -1vh -1vh 2vh 0vh,
+ #9ca3af 2vh 2vh 4vh 0;
+}
+.button {display: flex; 
+    width: 100%; 
+    background: #e1e1e1; 
+    justify-content: center;
+    position: sticky;
+    bottom: 2vh;
+}
+body {   margin: 0; 
+gap: 2vh; display: flex; flex-direction: column;
+  box-sizing: border-box;}
+
+.characters{ display: flex; flex-direction: column;
+}
+#char-icon img{ width: 100%; object-fit: cover; object-position: 0px -1vh;  aspect-ratio: 16/9; position: relative;}
+#char-icon { display: flex;   border-radius: 2vh; overflow: hidden;
+box-shadow: inset #fafafa -2vh -2vh 4vh -2vh,
+inset #b1b1b6 2vh 2vh 4vh -2vh;
+}
+
+.atack{display: flex;}
+.materials-container{ width: 100%; display: flex; flex-direction: column; gap: 1vh;}
+.materials-container .materialDiv {border-radius: 2vh; box-shadow:inset #fff -2vh -2vh 2vh -2vh,
+ inset #b2b6ba 2vh 2vh 2vh -2vh; }
+
+
+.materials-container {display:grid; width: 100%; height:100%;
+  grid-template-columns: repeat(auto-fill, minmax(9vh, 1fr)); 
+  justify-content: start;
+  align-content: start; 
+  gap: 1vh;  
+}
+
+.materials-container .materialDiv{ display: flex; 
+  flex-direction: column; padding: 2vh; justify-content: center;}
+.level .materials-container .materialDiv span{ text-align: center;}
+.level .materials-container .materialDiv img{border-radius: 1vh; 
+  box-shadow:#fff -1vh -1vh 1vh -1vh,
+ #9ca3af 2vh 2vh 4vh -2vh;
+ }

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Страница расчета материалов персонажа</title>
+  <link rel="stylesheet" href="calcular.css">
+  <script  src="./charactersData.js" defer></script>
+  <script src="./calcular2.js" defer></script>
+</head>
+<body>
+  
+<section class="characters">
+  <div id="char-icon"></div>
+  <h1 id="char-name">Загрузка</h1>
+</section>
+<section>
+  <article class="level">
+    <div>
+      <H2>Level</H2>
+      <h2 id="lvl"></h2>
+      <span id="out"></span>
+      <h2 class="current-level-display">0</h2>
+    </div>
+    <div class="level">
+      <div class="range">
+        <button id="minus-range" aria-label="Minus">
+          <img src="./assets/minus.svg" alt="minus">
+        </button>
+        <button id="plus-range" aria-label="Plus">
+          <img src="./assets/plus.svg" alt="plus">
+        </button>
+        <input type="range" id="range" min="0" max="70" value="0" step="10">
+        <span id="range-value">0</span>
+      </div>
+    </div>
+    <div class="basic_stat">
+      <h2>Таланты</h2>
+      <div class="section" data-group="attack">
+        <div id="char-s1">///</div>
+        <div class="hp_icon">
+          <p>Базовая атака</p>
+          <p id="char-atack">Загрузка</p>
+        </div>
+        <div class="level-group">
+          <button class="arrow left" aria-label="Previous Attack">&lt;</button>
+          <span class="level-value">1</span>
+          <button class="arrow right" aria-label="Next Attack">&gt;</button>
+        </div>
+      </div>
+      <div class="section" data-group="skill">
+        <div id="char-s2">///</div>
+        <div class="atk_icon">
+            <p>Элементальный навык</p>
+            <p id="char-skill">Загрузка</p>
+        </div>
+                    
+        <div class="level-group">
+          <button class="arrow left" aria-label="Previous skill">&lt;</button>
+          <span class="level-value">1</span>
+          <button class="arrow right" aria-label="Next Skill">&gt;</button>
+        </div>
+      </div>
+      <div class="section" data-group="explosion">
+        <div id="char-s3">///</div>
+        <div class="atk_icon">
+            <p>Взрыв стихии</p>
+            <p id="char-explosion">Загрузка</p>
+        </div>
+                    
+        <div class="level-group">
+          <button class="arrow left" aria-label="Previous Explosion">&lt;</button>
+          <span class="level-value">1</span>
+          <button class="arrow right" aria-label="Next Explosion">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+
+  
+  <div id="char-description">Описание персонажа тут...</div>
+  <div class="button">
+    <input type="button" onclick="history.back();" value="назад">
+    <button class="next" id="next-btn">
+      <a href="calc-mat.html">
+        Далее
+      </a>
+      
+    </button>
+  </div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+
+
+   // Весь ваш код, который использует charsData
+  function getQueryParam(param) {
+    const params = new URLSearchParams(window.location.search);
+    return params.get(param);
+  }
+
+  const charName = getQueryParam('name');
+
+  const nameElem = document.getElementById('char-name');
+  const descElem = document.getElementById('char-description');
+  const atElem = document.getElementById('char-atack');
+  const skElem = document.getElementById('char-skill');
+  const expElem = document.getElementById('char-explosion');
+
+  const icElem = document.getElementById('char-icon');
+  const s1Elem = document.getElementById('char-s1');
+  const s2Elem = document.getElementById('char-s2');
+  const s3Elem = document.getElementById('char-s3');
+
+  if (window.charsData && charName && window.charsData[charName]) {
+    const character = window.charsData[charName];
+
+    nameElem.textContent = charName;
+    descElem.textContent = character.description;
+    atElem.textContent = character.attack;
+    skElem.textContent = character.skill;
+    expElem.textContent = character.explosion;
+
+    if (character.icon) {
+      icElem.innerHTML = `<img src="${character.boldIcon}" alt="${charName}">`;
+      s1Elem.innerHTML = `<img src="${character.s1}" alt="${charName}">`;
+      s2Elem.innerHTML = `<img src="${character.s2}" alt="${charName}">`;
+      s3Elem.innerHTML = `<img src="${character.s3}" alt="${charName}">`;
+    } else {
+      icElem.innerHTML = '?';
+      s1Elem.innerHTML = '';
+      s2Elem.innerHTML = '';
+      s3Elem.innerHTML = '';
+    }
+  } else {
+    nameElem.textContent = 'Персонаж не найден';
+    descElem.textContent = 'Попробуйте выбрать другого персонажа на главной странице.';
+    atElem.textContent = 'Error';
+  }
+  });
+  </script>
+ <script>
+  document.getElementById('next-btn').addEventListener('click', function(event) {
+  event.preventDefault(); // чтобы предотвратить сразу переход по ссылке
+
+  // Собираем данные
+  const charName = document.getElementById('char-name').textContent;
+  
+  const rangeValue = document.getElementById('range').value;
+
+  // Для уровня и уровня групп, например:
+  const level = document.querySelector('.current-level-display').textContent;
+
+  // Для блоков "Таланты", собираем уровни
+  const attackLevel = document.querySelector('.section[data-group="attack"] .level-value').textContent;
+  const skillLevel = document.querySelector('.section[data-group="skill"] .level-value').textContent;
+  const explosionLevel = document.querySelector('.section[data-group="explosion"] .level-value').textContent;
+
+  // Объект для хранения данных
+  const dataToSave = {
+    charName,
+    rangeVal: rangeValue,
+    level,
+    attackLevel,
+    skillLevel,
+    explosionLevel
+  };
+
+  // Сохраняем в localStorage
+  localStorage.setItem('characterData', JSON.stringify(dataToSave));
+
+  // Затем переходим на следующую страницу
+  window.location.href = 'calc-mat.html';
+});
+ </script>
+</body>
+</html>
